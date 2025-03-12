@@ -1,46 +1,33 @@
-const API_KEY = "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"; // 🔹 Paste your Hugging Face API key here
+const API_KEY = "AIzaSyCI8Px_VlbbDvd77tzKAwF1ydgikTuVH0c";  // Paste your Gemini API key here
 
-async function fetchData() {
-    const name = document.getElementById("query").value.trim();
-    if (!name) {
-        alert("Please enter a vegetable or fruit name.");
-        return;
-    }
+async function sendMessage() {
+    let userInput = document.getElementById("user-input").value;
+    let responseDiv = document.getElementById("response");
 
-    const prompt = `Provide detailed information about the fruit or vegetable: ${name}
-    - Suitable soil type
-    - Growth duration in days
-    - Best marketplaces to sell
-    - Common diseases and prevention
-    - Any additional farming tips.`;
+    responseDiv.innerHTML = "Fetching data... ⏳";
+
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + API_KEY;
+
+    const requestBody = {
+        contents: [{ parts: [{ text: `Give me details about ${userInput}: Suitable soil type, Growth duration, Best marketplaces to sell.` }] }]
+    };
 
     try {
-        const response = await fetch(
-            "https://api-inference.huggingface.co/models/google/flan-t5-large",
-            {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${API_KEY}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ inputs: prompt })
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody)
+        });
 
         const data = await response.json();
-        console.log("API Response:", data);
-
-        if (data && data[0] && data[0].generated_text) {
-            document.getElementById("response").innerText = data[0].generated_text;
+        
+        if (data.candidates && data.candidates.length > 0) {
+            responseDiv.innerHTML = `<strong>Response:</strong> ${data.candidates[0].content.parts[0].text}`;
         } else {
-            document.getElementById("response").innerText = "No data found. Try another query.";
+            responseDiv.innerHTML = "No data found. Try again!";
         }
     } catch (error) {
-        console.error("Error:", error);
-        document.getElementById("response").innerText = "Error fetching data. Check console.";
+        responseDiv.innerHTML = "Error fetching data. Check your API key and console.";
+        console.error("API Error:", error);
     }
 }
